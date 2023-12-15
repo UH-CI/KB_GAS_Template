@@ -10,8 +10,7 @@
 * getApprovalsForDocumentId).
 *
 * To get started, search for anywhere it says "<FILL THIS IN>" and edit those values for
-* your situation or delete it as necessary (likely, in the case of the CI_ADMIN and 
-* HPC_ADMIN email address declarations).  When the Kuali Build form integration gets 
+* your situation.  When the Kuali Build form integration gets 
 * here, it invokes the doPost method which then formats the input and then parses 
 * it in the parseHPCSubmission method.
 *
@@ -54,9 +53,6 @@
 *
 */
 
-const CI_ADMIN = "<FILL THIS IN>";
-const HPC_ADMIN = "<FILL THIS IN>";
-const COL_SENDER_EMAIL = "<FILL THIS IN>";
 
 // the location of the spreadsheet will will write to and read from
 const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/<FILL THIS IN>";
@@ -71,6 +67,7 @@ const ORDERS_SHEET = SpreadsheetApp
 // If you ever change the app, you need to look at the logs from the first call to get the applicationId and paste it here.
 const APP_ID = "<FILL THIS IN>";  
 
+// only needed if you are retrieving approval status from KB's graphql.
 // if you ever start getting {"message":"Unauthorized"} errors, go check your API keys
 // https://hawaii.kualibuild.com/cor/main/#/users/<FILL THIS IN>/api-keys
 // to make sure it hasn't expired.  If it is expired, create a new one, delete the old, 
@@ -92,6 +89,8 @@ const COL_INDEX_CI_APPROVAL_STATUS = getOrdersColIndex(COL_CI_APPROVAL_STATUS);
 const COL_INDEX_CI_APPROVAL_STATUS_DATE = getOrdersColIndex(COL_CI_APPROVAL_STATUS_DATE);
 const COL_INDEX_SUBMISSION_DATE = getOrdersColIndex(COL_SUBMISSION_DATE);
 
+// The json received from KB has a bunch of stuff that makes it not parseable.  
+// This cleans it up so it can be parsed.
 function doStringReplacements(stringIn) {
   var stringOut = stringIn
   .replace(/\\\"/g, '"')       //   '\"' with '"'
@@ -118,11 +117,12 @@ function doPost(request) {
   }
 }
 
+// does absolutely nothing.  Just proves this isn't getting invoked by KB.
 function doGet() {
   Logger.log("doGet, does nothing");
 }
 
-// to test locally using the testString below
+// to test locally using the global testString  variable.
 function doTest() {
   try {
     //Logger.log("doTest: " + testString);
@@ -136,6 +136,7 @@ function doTest() {
   }
 }
 
+// determines how many columns are in the sheet.
 var ordersHeaderRow = undefined;
 function setOrdersHeaderRow() {
     var range = ORDERS_SHEET.getDataRange();
@@ -144,11 +145,14 @@ function setOrdersHeaderRow() {
     return ordersHeaderRow.length;
 }
 
+// gets the index of the column with the given name (key)
 function getOrdersColIndex(key) {
   if (!ordersHeaderRow) { setOrdersHeaderRow();}
   return ordersHeaderRow.indexOf(key);
 }
 
+// invoice numbers are incremented by one each time, so get the last invoice 
+// number and add one and return that as the next invoice number.
 function getNewOrderInvoiceNumber() {
     var lastRow = ORDERS_SHEET.getLastRow();  // returns the _location_ of the last row
     var lastCell = ORDERS_SHEET.getRange(lastRow, 1);
@@ -158,6 +162,7 @@ function getNewOrderInvoiceNumber() {
     return newInvoiceNumber;
 }
 
+// helper method for debugging, prints out all the data in the given array
 function printArrayContents(row, spacer) {
   Logger.log("printArrayContents");
   for (var v in row) {
@@ -228,6 +233,7 @@ function setOrdersValueWithValue(arr, spreadsheetColName, value, spacer = "") {
 *    - if convertToCurrency is true, it calls a method to turn the string into a currency string
 *    - if convertToDate is true, calls a method to turn the epoch date into a human readable string
 * - Returns the result.
+* Spacer is just for formatting debugging output.
 */
 function getValue(jsonObj, jsonKey, convertToCurrency, convertToDate, spacer = "") {
   value = "";
@@ -265,11 +271,7 @@ function handleDocAlreadySubmitted(docIdIn) {
   }
 }
 
-/* Handles parsing the Kuali Build form submission:
- *   writes it all out to the spreadsheet as needed,
- *   sends the initial registration confirmation emails,
- *   sends the mailing list add emails.
- */
+/* Parses the Kuali Build form submission and writes it all out to the spreadsheet as needed */
 function parseHPCSubmission(request) {
   try {
     //Logger.log("parseHPCSubmission: " + request);
@@ -324,6 +326,7 @@ function parseHPCSubmission(request) {
   }
 }
 
+// appends the given row to the given sheet
 function addToSpreadsheet(row, sheet) {
   Logger.log("AddToSpreadsheet (" + sheet + "): " + row);
   try {
@@ -422,8 +425,8 @@ function handleMissingApprovalDenialInvoices() {
 }
 
 // this is not used anywhere in production, it's called directly by a developer for testing purposes
-// the developer needs to plus in the ID of the document they want to see either the data or metadata (approvals on)
-// nothing gets processed, it just returns the info.
+// the developer needs to plug in the ID of the document they want to see either the data or metadata (approvals on)
+// nothing gets processed, it just returns the info in the document.
 function getDocumentInfoForTesting() {
   var docId = "<FILL THIS IN>"; 
   var resultType = "data"; 
@@ -455,6 +458,7 @@ function getApprovalsForDocumentIdTester() {
   });
 }
 
+// given a KB documentId, gets all the approval statuses associated with it and input into spreadsheet as appropriate.
 function getApprovalsForDocumentId(docId) {
   Logger.log("getApprovalsForDocumentId: " + docId);
   approvalUrl = 'https://hawaii.kualibuild.com/app/api/v0/graphql?query=query{app(id:"'+ APP_ID + '"){document(id:"' + docId + '"){meta}}}';
@@ -493,6 +497,7 @@ function getApprovalsForDocumentId(docId) {
   return results;
 }
 
+// sub-method for getApprovalsForDocumentId.  Processes a single step in a given form approval process.
 function processFormApprovalStep(results, step) {
   //Logger.log("processFormApprovalStep");
   var type = step.type;
