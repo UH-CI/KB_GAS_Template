@@ -31,6 +31,11 @@ through a ton of KB submission.  I'd recommend working on getting the connection
 KB to GAS going first, that way you can get the expected input to the 
 doPost method and know the structure of everything so you can code it out from there.
 
+I highly recommend setting up GASHub (Google Apps Script GitHub Assistant, 
+<http://gas.a4114.net/>).  GAS doesn't have a true versioning system, so you're really 
+working without a good safety net.  This Chrome extension lets you integrate GAS with 
+GitHub, it's somewhat limited, but is miles ahead of what GAS provides.
+
 General/TLDR:
 1.) Someone submits an order form via Kuali Build.
 2.) Kuali Build sends all the information in JSON format to this script, calling the doPost method.
