@@ -7,8 +7,7 @@ delete "AUTH_TOKEN" and any code that uses it (getDocumentInfoForTesting and
 getApprovalsForDocumentId).
 
 To get started, search for anywhere it says "<FILL THIS IN>" and edit those values for
-your situation or delete it as necessary (likely, in the case of the CI_ADMIN and 
-HPC_ADMIN email address declarations).  When the Kuali Build form integration gets 
+your situation.  When the Kuali Build form integration gets 
 here, it invokes the doPost method which then formats the input and then parses 
 it in the parseHPCSubmission method.
 
